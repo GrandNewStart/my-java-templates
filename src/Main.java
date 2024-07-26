@@ -1,8 +1,20 @@
+import crypto.CryptoUtils;
+import crypto.ECCrypto;
+import crypto.enums.Curve;
 import encoding.Base64Utils;
 import encoding.HexUtils;
 import json.JSONObject;
 
+import javax.crypto.KeyAgreement;
 import java.nio.charset.StandardCharsets;
+import java.security.*;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
+import java.util.Set;
 
 public class Main {
 
@@ -10,9 +22,10 @@ public class Main {
     private static final byte[] testBytes = testString.getBytes(StandardCharsets.UTF_8);
 
     public static void main(String[] args) {
-        testBase64();
-        testHexString();
-        testJSONObject();
+//        testBase64();
+//        testHexString();
+//        testJSONObject();
+        testECC();
     }
 
     public static void testBase64() {
@@ -75,6 +88,44 @@ public class Main {
         System.out.println("json5: " + json5);
         System.out.println("json6: " + json6);
         System.out.print("\n");
+    }
+
+    public static void testECC() {
+        try {
+            KeyPair kp1 = ECCrypto.generateKeyPair(Curve.P256);
+            KeyPair kp2 = ECCrypto.generateKeyPair(Curve.P256);
+
+            byte[] prv1 = ECCrypto.getRawData(kp1.getPrivate());
+            byte[] pub1 = ECCrypto.getRawData(kp1.getPublic());
+            byte[] prv2 = ECCrypto.getRawData(kp2.getPrivate());
+            byte[] pub2 = ECCrypto.getRawData(kp2.getPublic());
+
+            System.out.println("PRV1: (" + prv1.length + " bytes) " + HexUtils.bytesToHex(prv1));
+            System.out.println("PUB1: (" + pub1.length + " bytes) " + HexUtils.bytesToHex(pub1));
+            System.out.println("PRV2: (" + prv2.length + " bytes) " + HexUtils.bytesToHex(prv2));
+            System.out.println("PUB2: (" + pub2.length + " bytes) " + HexUtils.bytesToHex(pub2));
+
+            PrivateKey prv11 = ECCrypto.getPrivateKey(Curve.P256, prv1);
+            System.out.println(HexUtils.bytesToHex(prv11.getEncoded()));
+
+            PrivateKey prv22 = ECCrypto.getPrivateKey(Curve.P256, prv2);
+            System.out.println(HexUtils.bytesToHex(prv22.getEncoded()));
+
+            PublicKey pub11 = ECCrypto.getPublicKey(Curve.P256, pub1);
+            System.out.println(HexUtils.bytesToHex(pub11.getEncoded()));
+            System.out.println(HexUtils.bytesToHex(kp1.getPublic().getEncoded()));
+
+            PublicKey pub22 = ECCrypto.getPublicKey(Curve.P256, pub2);
+            System.out.println(HexUtils.bytesToHex(pub22.getEncoded()));
+            System.out.println(HexUtils.bytesToHex(kp2.getPublic().getEncoded()));
+
+            byte[] sec1 = ECCrypto.generateECDHSharedSecret(prv11, pub22);
+            byte[] sec2 = ECCrypto.generateECDHSharedSecret(prv22, pub11);
+            System.out.println(HexUtils.bytesToHex(sec1));
+            System.out.println(HexUtils.bytesToHex(sec2));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }
